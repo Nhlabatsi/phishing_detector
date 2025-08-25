@@ -4,26 +4,80 @@ import numpy as np
 import re
 import pandas as pd
 import os
+import requests
+import tempfile
 from sentence_transformers import SentenceTransformer
 from tensorflow.keras.models import load_model
+from urllib.parse import urlparse
+
+# -------------------
+# Configuration
+# -------------------
+MODEL_URLS = {
+    "rnn_model.pkl": "https://github.com/yourusername/yourrepo/releases/download/v1.0/rnn_model.pkl",
+    "iso_forest.pkl": "https://github.com/yourusername/yourrepo/releases/download/v1.0/iso_forest.pkl",
+    "tokenizer.pkl": "https://github.com/yourusername/yourrepo/releases/download/v1.0/tokenizer.pkl",
+    "scaler.pkl": "https://github.com/yourusername/yourrepo/releases/download/v1.0/scaler.pkl"
+}
+
+# -------------------
+# Download utilities
+# -------------------
+def download_file(url, dest_path):
+    """Download a file from URL to destination path"""
+    try:
+        response = requests.get(url, stream=True)
+        response.raise_for_status()
+        
+        with open(dest_path, 'wb') as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                f.write(chunk)
+        return True
+    except Exception as e:
+        st.error(f"Error downloading {url}: {str(e)}")
+        return False
+
+def ensure_models_available():
+    """Check if models are available, download if missing"""
+    models_dir = "models"
+    os.makedirs(models_dir, exist_ok=True)
+    
+    all_models_available = True
+    
+    for model_name, model_url in MODEL_URLS.items():
+        model_path = os.path.join(models_dir, model_name)
+        
+        if not os.path.exists(model_path):
+            st.info(f"Downloading {model_name}...")
+            if download_file(model_url, model_path):
+                st.success(f"Downloaded {model_name}")
+            else:
+                all_models_available = False
+    
+    return all_models_available
 
 # -------------------
 # Load models
 # -------------------
 @st.cache_resource
 def load_models():
-    bert_model = SentenceTransformer("all-MiniLM-L6-v2")
-    rnn_model = joblib.load("rnn_model.pkl")  # Using .pkl as you specified
-    iso_forest = joblib.load("iso_forest.pkl")
-    tokenizer = joblib.load("tokenizer.pkl")
-    scaler = joblib.load("scaler.pkl")
-    return bert_model, rnn_model, iso_forest, tokenizer, scaler
-
-try:
-    bert_model, rnn_model, iso_forest, tokenizer, scaler = load_models()
-except Exception as e:
-    st.error(f"Error loading models: {str(e)}")
-    st.stop()
+    # Ensure models are available
+    if not ensure_models_available():
+        st.error("Failed to download required models. Please check your internet connection.")
+        st.stop()
+    
+    # Load models
+    models_dir = "models"
+    try:
+        bert_model = SentenceTransformer("all-MiniLM-L6-v2")
+        rnn_model = joblib.load(os.path.join(models_dir, "rnn_model.pkl"))
+        iso_forest = joblib.load(os.path.join(models_dir, "iso_forest.pkl"))
+        tokenizer = joblib.load(os.path.join(models_dir, "tokenizer.pkl"))
+        scaler = joblib.load(os.path.join(models_dir, "scaler.pkl"))
+        return bert_model, rnn_model, iso_forest, tokenizer, scaler
+    except Exception as e:
+        st.error(f"Error loading models: {str(e)}")
+        st.stop()
 
 # -------------------
 # Preprocessing
@@ -163,6 +217,14 @@ st.set_page_config(page_title="Batch Phishing Detector", page_icon="✉️", lay
 st.title("✉️ Batch Phishing Email Detector")
 st.write("Analyze single emails or upload a CSV file containing multiple emails to detect phishing attempts.")
 
+# Load models (this will trigger download if needed)
+try:
+    bert_model, rnn_model, iso_forest, tokenizer, scaler = load_models()
+    st.success("✅ Models loaded successfully!")
+except:
+    st.error("❌ Failed to load models. Please check your internet connection.")
+    st.stop()
+
 # Tabs for different input methods
 tab1, tab2, tab3 = st.tabs(["Single Email", "Upload CSV", "CSV File Path"])
 
@@ -248,7 +310,7 @@ with tab2:
 
 with tab3:
     st.header("CSV File Path Input")
-    csv_path = st.text_input("C:\\Users\\USER\\Downloads\\phishing\\sample_data\\phishing_dataset_combined.csv")
+    csv_path = st.text_input("Enter the full path to your CSV file:")
     
     if csv_path:
         if os.path.exists(csv_path):
@@ -289,4 +351,3 @@ with tab3:
                 st.error(f"Error processing file: {str(e)}")
         else:
             st.error("File not found. Please check the path and try again.")
-            
