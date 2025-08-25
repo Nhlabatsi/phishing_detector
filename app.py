@@ -11,13 +11,13 @@ from tensorflow.keras.models import load_model
 from urllib.parse import urlparse
 
 # -------------------
-# Configuration
+# Configuration https://github.com/Nhlabatsi/phishing_detector/releases/download/v1.0.0/iso_forest.pkl
 # -------------------
 MODEL_URLS = {
-    "rnn_model.pkl": "https://github.com/yourusername/yourrepo/releases/download/v1.0/rnn_model.pkl",
-    "iso_forest.pkl": "https://github.com/yourusername/yourrepo/releases/download/v1.0/iso_forest.pkl",
-    "tokenizer.pkl": "https://github.com/yourusername/yourrepo/releases/download/v1.0/tokenizer.pkl",
-    "scaler.pkl": "https://github.com/yourusername/yourrepo/releases/download/v1.0/scaler.pkl"
+    "rnn_model.pkl": "https://github.com/Nhlabatsi/phishing_detector/releases/download/v1.0/rnn_model.pkl",
+    "iso_forest.pkl": "https://github.com/Nhlabatsi/phishing_detector/releases/download/v1.0/iso_forest.pkl",
+    "tokenizer.pkl": "https://github.com/Nhlabatsi/phishing_detector/releases/download/v1.0/tokenizer.pkl",
+    "scaler.pkl": "https://github.com/Nhlabatsi/phishing_detector/releases/download/v1.0/scaler.pkl"
 }
 
 # -------------------
@@ -351,3 +351,4 @@ with tab3:
                 st.error(f"Error processing file: {str(e)}")
         else:
             st.error("File not found. Please check the path and try again.")
+
